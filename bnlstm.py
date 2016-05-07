@@ -50,7 +50,7 @@ class CellState(function.Function):
 	def backward(self, inputs, grad_outputs):
 		xp = cuda.get_array_module(*inputs)
 		c_prev, x = inputs
-		gc = grad_outputs
+		gc, = grad_outputs
 
 		gx = xp.empty_like(x)
 		gg, gi, gf, go = _extract_gates(gx)
@@ -58,9 +58,9 @@ class CellState(function.Function):
 		if gc is None:
 			gc = 0
 
-		co = np.tanh(self.c)
-		gg[:] = gc * self.i * _grad_tanh(self.a)
-		gi[:] = gc * self.a * _grad_sigmoid(self.i)
+		co = xp.tanh(self.c)
+		gg[:] = gc * self.i * _grad_tanh(self.g)
+		gi[:] = gc * self.g * _grad_sigmoid(self.i)
 		gf[:] = gc * c_prev * _grad_sigmoid(self.f)
 		go[:] = 0
 		gc_prev = gc * self.f
@@ -82,7 +82,7 @@ class HiddenState(CellState):
 	def backward(self, inputs, grad_outputs):
 		xp = cuda.get_array_module(*inputs)
 		c, x = inputs
-		gh = grad_outputs
+		gh, = grad_outputs
 
 		gx = xp.empty_like(x)
 		gg, gi, gf, go = _extract_gates(gx)
@@ -90,12 +90,12 @@ class HiddenState(CellState):
 		if gh is None:
 			gh = 0
 
-		co = np.tanh(self.c)
+		co = xp.tanh(self.c)
 		gg[:] = 0
 		gi[:] = 0
 		gf[:] = 0
 		go[:] = gh * self.c * _grad_sigmoid(self.o)
-		gc = gh * _grad_tanh(c) * self.f
+		gc = gh * _grad_tanh(c) * self.o
 
 		return gc, gx
 
