@@ -43,6 +43,7 @@ class TestLSTM(unittest.TestCase):
 		h2_expect = bnlstm.bn_lstm_state(self.link.bnc(c2_expect), lstm_in)
 		gradient_check.assert_allclose(h2.data, h2_expect.data)
 
+
 	def test_forward_cpu(self):
 		self.check_forward(self.x)
 
@@ -51,6 +52,34 @@ class TestLSTM(unittest.TestCase):
 		self.link.to_gpu()
 		self.check_forward(cuda.to_gpu(self.x))
 
+	def check_backward(self, x_data):
+		xp = self.link.xp
+		x = chainer.Variable(x_data)
+		y_shape = (4, self.out_size)
+		y_grad = np.random.uniform(-1, 1, y_shape).astype(np.float32)
+		if xp is cuda.cupy:
+			y_grad = cuda.to_gpu(y_grad)
+
+		c0 = chainer.Variable(xp.zeros((len(self.x), self.out_size), dtype=self.x.dtype))
+		lstm_in = self.link.bnx(self.link.wx(x))
+		c1 = bnlstm.bn_lstm_cell(c0, lstm_in)
+		h1 = bnlstm.bn_lstm_state(self.link.bnc(c1), lstm_in)
+		gradient_check.check_backward(bnlstm.CellState(), (c0.data, lstm_in.data), y_grad, eps=1e-2)
+		gradient_check.check_backward(bnlstm.HiddenState(), (self.link.bnc(c1).data, lstm_in.data), y_grad, eps=1e-2)
+
+		lstm_in = self.link.bnx(self.link.wx(x)) + self.link.bnh(self.link.wh(h1))
+		c2 = bnlstm.bn_lstm_cell(c1, lstm_in)
+		h2 = bnlstm.bn_lstm_state(self.link.bnc(c2), lstm_in)
+		gradient_check.check_backward(bnlstm.CellState(), (c2.data, lstm_in.data), y_grad, eps=1e-2)
+		gradient_check.check_backward(bnlstm.HiddenState(), (self.link.bnc(c2).data, lstm_in.data), y_grad, eps=1e-2)
+
+	def test_backward_cpu(self):
+		self.check_backward(self.x)
+
+	@attr.gpu
+	def test_backward_gpu(self):
+		self.link.to_gpu()
+		self.check_backward(cuda.to_gpu(self.x))
 
 class TestLSSTMRestState(unittest.TestCase):
 

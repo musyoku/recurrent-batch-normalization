@@ -90,12 +90,11 @@ class HiddenState(CellState):
 		if gh is None:
 			gh = 0
 
-		co = xp.tanh(self.c)
 		gg[:] = 0
 		gi[:] = 0
 		gf[:] = 0
 		go[:] = gh * self.c * _grad_sigmoid(self.o)
-		gc = gh * _grad_tanh(c) * self.o
+		gc = gh * _grad_tanh(self.c) * self.o
 
 		return gc, gx
 
