@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import numpy as np
-from chainer import cuda, Variable, optimizers, function
+from chainer import cuda, Variable, optimizers, function, link
 from chainer import functions as F
 from chainer import links as L
 from chainer.utils import type_check
@@ -45,7 +45,7 @@ class CellState(function.Function):
 		self.i = _sigmoid(i)
 		self.f = _sigmoid(f)
 		self.c = self.g * self.i + self.f * c_prev
-		return self.c
+		return self.c,
 
 	def backward(self, inputs, grad_outputs):
 		xp = cuda.get_array_module(*inputs)
@@ -77,7 +77,7 @@ class HiddenState(CellState):
 		self.o = _sigmoid(o)
 		self.c = xp.tanh(c)
 		self.h = self.o * self.c
-		return self.h
+		return self.h,
 
 	def backward(self, inputs, grad_outputs):
 		xp = cuda.get_array_module(*inputs)
@@ -108,25 +108,25 @@ def bn_lstm_state(c, x):
 class BNLSTM(link.Chain):
 
 	def __init__(self, in_size, out_size):
-		super(LSTM, self).__init__(
+		super(BNLSTM, self).__init__(
 			wx=L.Linear(in_size, 4 * out_size),
 			wh=L.Linear(out_size, 4 * out_size, nobias=True),
-			bnx=L.BatchNormalization(in_size),
-			bnh=L.BatchNormalization(out_size),
+			bnx=L.BatchNormalization(4 * out_size),
+			bnh=L.BatchNormalization(4 * out_size),
 			bnc=L.BatchNormalization(out_size)
 		)
 		self.state_size = out_size
 		self.reset_state()
 
 	def to_cpu(self):
-		super(LSTM, self).to_cpu()
+		super(BNLSTM, self).to_cpu()
 		if self.c is not None:
 			self.c.to_cpu()
 		if self.h is not None:
 			self.h.to_cpu()
 
 	def to_gpu(self, device=None):
-		super(LSTM, self).to_gpu(device)
+		super(BNLSTM, self).to_gpu(device)
 		if self.c is not None:
 			self.c.to_gpu(device)
 		if self.h is not None:
@@ -135,7 +135,7 @@ class BNLSTM(link.Chain):
 	def reset_state(self):
 		self.c = self.h = None
 
-	def __call__(self, x):
+	def __call__(self, x, test=False):
 		lstm_in = self.bnx(self.wx(x))
 		if self.h is not None:
 			lstm_in += self.bnh(self.wh(self.h))
