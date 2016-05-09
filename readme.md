@@ -1,4 +1,4 @@
-# Reccurent Batch Normalization
+# Recurrent Batch Normalization
 
 This package provides a Chainer implementation of Batch-normalizing LSTM described in [Recurrent Batch Normalization [arXiv:1603.09025]](http://arxiv.org/abs/1603.09025).
 
