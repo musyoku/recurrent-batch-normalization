@@ -43,7 +43,6 @@ class TestLSTM(unittest.TestCase):
 		h2_expect = bnlstm.bn_lstm_state(self.link.bnc(c2_expect), lstm_in)
 		gradient_check.assert_allclose(h2.data, h2_expect.data)
 
-
 	def test_forward_cpu(self):
 		self.check_forward(self.x)
 
@@ -169,6 +168,5 @@ class TestLSTMToCPUToGPU(unittest.TestCase):
 		self.link(self.x)
 		self.check_to_cpu_to_gpu(self.link.c)
 		self.check_to_cpu_to_gpu(self.link.h)
-
 
 testing.run_module(__name__, __file__)
