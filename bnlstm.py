@@ -353,13 +353,13 @@ class BNLSTM(link.Chain):
 		self.c = self.h = None
 
 	def __call__(self, x, test=False):
-		lstm_in = self.bnx(self.wx(x))
+		lstm_in = self.bnx(self.wx(x), test=test)
 		if self.h is not None:
-			lstm_in += self.bnh(self.wh(self.h))
+			lstm_in += self.bnh(self.wh(self.h), test=test)
 		lstm_in = self.bias(lstm_in)
 		if self.c is None:
 			xp = self.xp
 			self.c = Variable(xp.zeros((len(x.data), self.state_size), dtype=x.data.dtype), volatile="auto")
 		self.c = bn_lstm_cell(self.c, lstm_in)
-		self.h = bn_lstm_state(self.bnc(self.c), lstm_in)
+		self.h = bn_lstm_state(self.bnc(self.c, test=test), lstm_in)
 		return self.h
