@@ -11,8 +11,8 @@ would seem natural to share the statistics that are used for normalization acros
 neural networks share their parameters over time. However, we have found that simply averaging
 statistics over time severely degrades performance. Although LSTM activations do converge to a
 stationary distribution, we have empirically observed that their statistics during the initial transient
-differ significantly as figure 1 shows. Consequently, **we recommend using separate statistics for
-each timestep** to preserve information of the initial transient phase in the activations.
+differ significantly as figure 1 shows. Consequently, we recommend using separate statistics for
+each timestep to preserve information of the initial transient phase in the activations.
 ```
 
 ## Requirements
